@@ -102,3 +102,27 @@ chmod +x ./autotest.sh
 ./autotest.sh tail gpuburn-smi
 ```
 
+
+GUI (Tkinter)
+
+- Запуск GUI:
+
+```bash
+python3 autotest_gui.py
+```
+
+- Возможности:
+  - Запуск основных команд: install, monitor-once/loop, htop-snapshot
+  - Тесты: cpu-stress, gpuburn, ram-memtest, disk-fio
+  - Сеть: iperf3 server, iperf3 client (10×10с с усреднением)
+  - Задачи: `task run` пресеты (4h, 8h, 24h, 48h, gpu_only, cpu_only)
+  - Планировщик: setup-cron, setup-systemd, remove-systemd
+  - Отчёты: report, collect, rotate, clean; кнопка “Open Last Report”
+  - Статус и управление: индикатор состояния RUNNING/IDLE, кнопка Stop
+  - Выбор `.env` и передача его как `--config PATH`
+  - Переключение языка интерфейса (RU/EN), по умолчанию — русский
+
+- Требования:
+  - Python 3 с Tkinter (пакет `python3-tk` при необходимости)
+  - Доступ к `autotest.sh` (GUI сам предложит выбрать путь, если не найдёт рядом)
+

@@ -20,6 +20,7 @@ VERBOSE=false
 
 vlog() { $VERBOSE && echo "[VERBOSE] $*" || true; }
 run() { if $DRY_RUN; then echo "[DRY-RUN] $*"; else eval "$@"; fi }
+info() { echo "[INFO] $(date +"${AUTOTEST_FORMAT_DATE:-%d-%m-%Y %H:%M:%S}") - $*"; }
 
 print_repo_banner() {
   echo "AutoTest Linux Framework"
@@ -284,6 +285,7 @@ discover_plugins() {
 }
 
 cmd_install() {
+  info "Starting install"
   run sudo apt update
   run sudo apt install -y vim nano htop stress-ng openssh-server tmux mc git smbclient cifs-utils libsensors5 aha
   if systemctl is-active --quiet ssh; then
@@ -302,12 +304,14 @@ cmd_install() {
 }
 
 cmd_monitor_once() {
+  info "Monitor once"
   bash "$SCRIPT_DIR/monitor.sh"
   echo "Appended metrics to $HOME/AutoTest_Logs/sysmonitor/sysmonitor.log"
 }
 
 cmd_monitor_loop() {
   local interval="${1:-10}"
+  info "Monitor loop every ${interval}s"
   ensure_cmd awk
   ensure_cmd sensors || true
   while true; do
@@ -317,6 +321,7 @@ cmd_monitor_loop() {
 }
 
 cmd_htop_snapshot() {
+  info "HTOP snapshot"
   require_cmd aha aha
   require_any_cmd sensors lm-sensors sensors lm-sensors
   bash "$SCRIPT_DIR/htop-res.sh"
@@ -324,6 +329,7 @@ cmd_htop_snapshot() {
 
 cmd_stress_ram() {
   local duration="${1:-28800}"
+  info "RAM stress for ${duration}s"
   require_cmd stress-ng stress-ng
   DURATION="$duration" bash "$SCRIPT_DIR/stress_ram.sh"
 }
@@ -338,6 +344,7 @@ cmd_iostat() {
   ensure_cmd iostat
   require_cmd iostat sysstat
   local log_file="$LOG_DIR/${dev}_iostat.csv"
+  info "Start iostat for ${dev} every ${interval}s -> $log_file"
   if [ ! -f "$log_file" ]; then
     echo "Timestamp,Read_MB_s,Write_MB_s" > "$log_file"
   fi
@@ -351,6 +358,7 @@ cmd_iostat() {
 
 cmd_gpuburn() {
   local duration="${1:-3600}"
+  info "GPU burn for ${duration}s"
   require_cmd nvidia-smi nvidia-utils-535 || true
   if [ ! -x "$SCRIPT_DIR/gpu_burn" ] && ! command -v gpu_burn >/dev/null 2>&1; then
     echo "gpu_burn не найден. Пытаюсь установить..."
@@ -394,6 +402,7 @@ cmd_gpuburn() {
 }
 
 cmd_status() {
+  info "Status"
   local LOGDIR="$HOME/gpu_burn_logs"
   if [ -f "$LOGDIR/gpu_burn.pid" ]; then
     local pid
@@ -420,6 +429,7 @@ cmd_status() {
 
 cmd_stop() {
   local task="${1:-}"
+  info "Stop task ${task}"
   if [ -z "$task" ]; then echo "Specify task to stop (e.g. gpuburn)" >&2; exit 1; fi
   case "$task" in
     gpuburn)
@@ -448,6 +458,7 @@ cmd_stop() {
 
 cmd_tail() {
   local task="${1:-}"
+  info "Tail ${task}"
   if [ -z "$task" ]; then echo "Specify task to tail (monitor-once|htop-snapshot|gpuburn-smi)" >&2; exit 1; fi
   case "$task" in
     monitor-once)
@@ -464,6 +475,7 @@ cmd_tail() {
 }
 
 cmd_list() {
+  info "List tasks and plugins"
   discover_plugins
   echo "Built-in tasks:"
   for k in "${!TASK_DESC[@]}"; do
@@ -482,6 +494,7 @@ cmd_list() {
 
 cmd_run() {
   local task="${1:-}"; shift || true
+  info "Run task: ${task}"
   if [ -z "$task" ]; then echo "Specify task to run" >&2; exit 1; fi
   case "$task" in
     install|monitor-once|monitor-loop|htop-snapshot|stress-ram|iostat|gpuburn|parse-nvidia|setup-cron|list|status|stop|tail)
@@ -500,6 +513,7 @@ cmd_run() {
 cmd_collect() {
   local ts archive
   ts=$(date +"${AUTOTEST_FORMAT_DATE:-%d-%m-%Y %H:%M:%S}")
+  info "Collect logs"
   mkdir -p "$ARCHIVE_DIR"
   archive="$ARCHIVE_DIR/autotest_logs_$ts.tar.gz"
   echo "Collecting logs to $archive"
@@ -512,6 +526,7 @@ cmd_collect() {
 
 cmd_clean() {
   local only="all"; local older=""; local mode="all_now"
+  info "Clean logs"
   while [ -n "${1:-}" ]; do
     case "$1" in
       --only) only="$2"; shift 2 ;;
@@ -571,13 +586,14 @@ cmd_clean() {
 }
 
 cmd_rotate() {
+  info "Rotate logs (>5M)"
   echo "Compressing large logs (>5M) in $LOG_DIR and $GPU_LOG_DIR"
   find "$LOG_DIR" -type f \( -name '*.log' -o -name '*.html' -o -name '*.csv' \) -size +5M -not -name '*.gz' -print -exec gzip -f {} + 2>/dev/null || true
   find "$GPU_LOG_DIR" -type f \( -name '*.log' -o -name '*.csv' \) -size +5M -not -name '*.gz' -print -exec gzip -f {} + 2>/dev/null || true
 }
 
 cmd_deps_all() {
-  echo "Installing all dependencies..."
+  info "Installing dependencies"
   run sudo apt update
   run sudo apt install -y vim nano htop stress-ng openssh-server tmux mc git smbclient cifs-utils libsensors5 aha sysstat lm-sensors python3 python3-pip build-essential memtester fio iperf3 smartmontools nvme-cli
   # Optional NVIDIA utils
@@ -600,6 +616,7 @@ cmd_deps_all() {
 }
 
 cmd_config_show() {
+  info "Config show"
   echo "CONFIG:" 
   echo "  LOG_DIR=$LOG_DIR"
   echo "  GPU_LOG_DIR=$GPU_LOG_DIR"
@@ -610,6 +627,7 @@ cmd_config_show() {
 
 cmd_cpu_stress() {
   local duration="${1:-600}"
+  info "CPU stress for ${duration}s"
   require_cmd stress-ng stress-ng
   local ts logfile
   ts=$(date +"${AUTOTEST_FORMAT_DATE:-%d-%m-%Y %H:%M:%S}")
@@ -630,6 +648,7 @@ cmd_cpu_stress() {
 
 cmd_ram_memtest() {
   local mb="${1:-1024}"; local loops="${2:-1}"
+  info "RAM memtest ${mb}MB loops=${loops}"
   require_cmd memtester memtester
   local ts logfile
   ts=$(date +"${AUTOTEST_FORMAT_DATE:-%d-%m-%Y %H:%M:%S}")
@@ -640,6 +659,7 @@ cmd_ram_memtest() {
 
 cmd_disk_fio() {
   local dir="${1:-$HOME}"; local duration="${2:-60}"
+  info "Disk FIO in ${dir} for ${duration}s"
   require_cmd fio fio
   mkdir -p "$dir"
   local ts logfile
@@ -654,12 +674,14 @@ cmd_disk_fio() {
 cmd_net_iperf3_server() {
   require_cmd iperf3 iperf3
   local bind_ip="${AUTOTEST_IPERF_BIND:-192.168.10.18}"
+  info "Start iperf3 server on ${bind_ip}"
   echo "Starting iperf3 server on ${bind_ip} (Ctrl+C to stop)"
   iperf3 -s -B "$bind_ip"
 }
 
 cmd_net_iperf3_client() {
   local host="${1:-}"; local duration="${2:-10}"; local runs="${3:-10}"
+  info "iperf3 client to ${host} runs=${runs} duration=${duration}s"
   if [ -z "$host" ]; then echo "Specify host for iperf3 client" >&2; exit 1; fi
   require_cmd iperf3 iperf3
   local ts logfile
@@ -710,6 +732,7 @@ cmd_net_iperf3_client() {
 
 cmd_task() {
   local action="${1:-}"; shift || true
+  info "Run task preset: ${*}"
   if [ "$action" != "run" ]; then
     echo "Usage: autotest.sh task run <4h|8h|24h|48h|gpu_only|cpu_only>" >&2
     exit 1
@@ -977,8 +1000,8 @@ done
 
 load_config "$CONFIG_PATH"
 
-# Print banner (TTY only, can be disabled with AUTOTEST_NO_BANNER=1)
-if [ -t 1 ] && [ "${AUTOTEST_NO_BANNER:-0}" != "1" ]; then
+# Print banner only when launched without commands/flags (TTY only)
+if [ -t 1 ] && [ "${AUTOTEST_NO_BANNER:-0}" != "1" ] && [ $# -eq 0 ]; then
   print_repo_banner
 fi
 
