@@ -193,7 +193,8 @@ class AutotestGUI(tk.Tk):
         self.btn_rotate.grid(row=0, column=2, padx=6)
         self.btn_clean = ttk.Button(f, text='Clean Logs (ALL)', command=lambda: self.run_cmd(['clean', '--all']))
         self.btn_clean.grid(row=0, column=3, padx=6)
-        ttk.Button(f, text='Open Last Report', command=self._open_last_report).grid(row=0, column=4, padx=6)
+        self.btn_open_report = ttk.Button(f, text='Open Last Report', command=self._open_last_report)
+        self.btn_open_report.grid(row=0, column=4, padx=6)
         return f
 
     def _browse_env(self):
@@ -253,7 +254,7 @@ class AutotestGUI(tk.Tk):
                     'fio': 'Диск (FIO)', 'iperf_srv': 'Сервер iperf3', 'iperf_cli': 'Клиент iperf3 (10×10с)',
                     'run_task': 'Запустить задачу', 'setup_cron': 'Настроить Cron', 'setup_systemd': 'Настроить systemd',
                     'remove_systemd': 'Удалить systemd', 'report': 'Отчёт (HTML)', 'collect': 'Собрать логи', 'rotate': 'Сжать логи',
-                    'clean': 'Очистить логи (ВСЕ)', 'doctor': 'Проверка', 'deps': 'Зависимости', 'help': 'Справка'
+                    'clean': 'Очистить логи (ВСЕ)', 'open_report': 'Открыть отчёт', 'doctor': 'Проверка', 'deps': 'Зависимости', 'help': 'Справка'
                 },
                 'en': {
                     'install': 'Install', 'monitor_once': 'Monitor Once', 'monitor_loop': 'Monitor Loop',
@@ -261,7 +262,7 @@ class AutotestGUI(tk.Tk):
                     'fio': 'Disk FIO', 'iperf_srv': 'Start iperf3 Server', 'iperf_cli': 'Run iperf3 Client (10x10s avg)',
                     'run_task': 'Run Task', 'setup_cron': 'Setup Cron', 'setup_systemd': 'Setup systemd',
                     'remove_systemd': 'Remove systemd', 'report': 'Report (HTML)', 'collect': 'Collect Logs', 'rotate': 'Rotate Logs',
-                    'clean': 'Clean Logs (ALL)', 'doctor': 'Doctor', 'deps': 'Deps All', 'help': 'Help'
+                    'clean': 'Clean Logs (ALL)', 'open_report': 'Open Last Report', 'doctor': 'Doctor', 'deps': 'Deps All', 'help': 'Help'
                 }
             }
         }
@@ -312,6 +313,7 @@ class AutotestGUI(tk.Tk):
         self.btn_collect.config(text=B['collect'])
         self.btn_rotate.config(text=B['rotate'])
         self.btn_clean.config(text=B['clean'])
+        self.btn_open_report.config(text=B['open_report'])
         self.btn_doctor.config(text=B['doctor'])
         self.btn_deps.config(text=B['deps'])
         self.btn_help.config(text=B['help'])
